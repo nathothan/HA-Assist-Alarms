@@ -1,0 +1,150 @@
+set_alarm:
+  name: Set Alarm
+  description: Schedule an alarm to ring at a specific time.
+  fields:
+    time_str:
+      name: Time
+      description: "Time string, e.g. '7 AM', '7:30', 'in 30 minutes', 'noon'."
+      required: true
+      example: "7:30 AM"
+      selector:
+        text:
+    date_str:
+      name: Date
+      description: "Optional date string, e.g. 'today', 'tomorrow', 'monday'."
+      required: false
+      example: "tomorrow"
+      selector:
+        text:
+    label:
+      name: Label
+      description: Name spoken aloud when the alarm fires.
+      required: false
+      default: "Alarm"
+      example: "Wake up"
+      selector:
+        text:
+    satellite:
+      name: Satellite
+      description: assist_satellite entity ID to announce on.
+      required: false
+      example: "assist_satellite.bedroom_respeaker"
+      selector:
+        entity:
+          domain: assist_satellite
+    repeat:
+      name: Repeat
+      description: "Recurrence: once, daily, weekdays, or weekends."
+      required: false
+      default: "once"
+      selector:
+        select:
+          options:
+            - once
+            - daily
+            - weekdays
+            - weekends
+
+set_reminder:
+  name: Set Reminder
+  description: Schedule a spoken reminder at a specific time.
+  fields:
+    time_str:
+      name: Time
+      description: "Time string, e.g. '7 AM', '7:30', 'in 30 minutes', 'noon'."
+      required: true
+      example: "3:00 PM"
+      selector:
+        text:
+    date_str:
+      name: Date
+      description: "Optional date string, e.g. 'today', 'tomorrow', 'monday'."
+      required: false
+      example: "today"
+      selector:
+        text:
+    label:
+      name: Label
+      description: What to remind you of — spoken aloud when it fires.
+      required: true
+      example: "call your mother"
+      selector:
+        text:
+    satellite:
+      name: Satellite
+      description: assist_satellite entity ID to announce on.
+      required: false
+      example: "assist_satellite.bedroom_respeaker"
+      selector:
+        entity:
+          domain: assist_satellite
+    repeat:
+      name: Repeat
+      description: "Recurrence: once, daily, weekdays, or weekends."
+      required: false
+      default: "once"
+      selector:
+        select:
+          options:
+            - once
+            - daily
+            - weekdays
+            - weekends
+
+cancel_alarm:
+  name: Cancel Alarm
+  description: Cancel a scheduled alarm by its item ID.
+  fields:
+    item_id:
+      name: Item ID
+      description: The item ID returned when the alarm was created.
+      required: true
+      example: "abc123"
+      selector:
+        text:
+
+cancel_reminder:
+  name: Cancel Reminder
+  description: Cancel a scheduled reminder by its item ID.
+  fields:
+    item_id:
+      name: Item ID
+      description: The item ID returned when the reminder was created.
+      required: true
+      example: "abc123"
+      selector:
+        text:
+
+snooze:
+  name: Snooze
+  description: Snooze the currently ringing alarm or reminder.
+  fields:
+    item_id:
+      name: Item ID
+      description: The item ID of the active alarm or reminder.
+      required: true
+      example: "abc123"
+      selector:
+        text:
+    minutes:
+      name: Minutes
+      description: How many minutes to snooze for.
+      required: false
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: minutes
+
+stop_all:
+  name: Stop All
+  description: Stop all currently ringing alarms and reminders.
+  fields: {}
+
+purge:
+  name: Purge Missed
+  description: >
+    Delete all items with status "missed" from storage. Missed items accumulate
+    when alarms fire while HA is restarted. Run this to keep storage clean.
+  fields: {}

@@ -1,0 +1,7 @@
+{
+  "name": "HA Alarms",
+  "description": "Voice-triggered alarms and reminders for ESPHome Assist satellites. Set, snooze, and cancel alarms entirely by voice — no app, no phone, no screen.",
+  "render_readme": true,
+  "homeassistant": "2026.1.0",
+  "iot_class": "local_push"
+}

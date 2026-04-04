@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HA Alarms",
+        "description": "Set up the HA Alarms integration. No additional configuration is required at this step."
+      }
+    },
+    "abort": {
+      "already_configured": "HA Alarms is already configured."
+    },
+    "error": {}
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Alarm Sounds",
+        "description": "Set the alarm sound for each satellite. Use a media path like `/media/alarms/file.mp3` (files in `config/media/alarms/`) or a full HTTP URL.",
+        "data_description": {}
+      }
+    }
+  }
+}

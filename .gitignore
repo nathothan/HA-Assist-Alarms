@@ -1,0 +1,28 @@
+# Third-party reference code
+reference/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local deploy script overrides
+deploy.local.sh
+
+# Secrets / credentials
+secrets.yaml
+.env
+.claude/

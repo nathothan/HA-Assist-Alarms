@@ -1,0 +1,145 @@
+# Custom sentences for the ha_alarms integration.
+#
+# Intent names must match those registered in intent_handler.py exactly.
+#
+# All time, date, label, and minutes slots are wildcards — the raw spoken
+# string is captured as-is and passed to datetime_parser.py for
+# interpretation.  This is how we support relative time ("in 30 minutes"),
+# bare hours ("7 AM"), named weekdays, etc. without enumerating every form.
+#
+# Slot references: {time}, {date}, {label}, {minutes}
+# Optional words:  [word]
+# Alternatives:    (word1|word2)
+#
+# --- Intent shadowing notes ---
+# HaAlarmsSetAlarm intentionally shadows HA's built-in HassSetAlarm intent.
+# Our patterns match first because this custom sentences file is loaded by HA.
+# We intentionally DO NOT shadow HassGetCurrentTime ("what time is it",
+# "what's the time") or HassGetCurrentDate ("what's today's date", "what
+# day is it") — our "what time is my alarm" pattern is distinct enough.
+
+language: "en"
+
+intents:
+
+  HaAlarmsSetAlarm:
+    data:
+      # One-shot (default)
+      - sentences:
+          - "set [an] alarm for {time}"
+          - "set [an] alarm for {time} on {date}"
+          - "set [an] alarm for {date} at {time}"
+          - "set [an] alarm in {time}"
+          - "wake me up at {time}"
+          - "wake me up at {time} on {date}"
+          - "wake me up on {date} at {time}"
+          - "wake me up {time} on {date}"
+          - "wake me up {time}"
+          - "wake me up in {time}"
+      # Repeating — fixed repeat slot injected by sentence engine
+      - sentences:
+          - "set [a] daily alarm for {time}"
+          - "wake me up every day at {time}"
+          - "set [an] alarm for {time} every day"
+        slots:
+          repeat: "daily"
+      - sentences:
+          - "set [a] weekday alarm for {time}"
+          - "wake me up on weekdays at {time}"
+          - "set [an] alarm for {time} on weekdays"
+        slots:
+          repeat: "weekdays"
+      - sentences:
+          - "set [a] weekend alarm for {time}"
+          - "wake me up on weekends at {time}"
+          - "set [an] alarm for {time} on weekends"
+        slots:
+          repeat: "weekends"
+
+  HaAlarmsSetReminder:
+    data:
+      - sentences:
+          - "remind me to {label} at {time}"
+          - "remind me to {label} at {time} on {date}"
+          - "remind me to {label} on {date} at {time}"
+          - "set a reminder to {label} at {time}"
+          - "set a reminder to {label} at {time} on {date}"
+          - "set a reminder to {label} on {date} at {time}"
+          # Relative-time form: "remind me in 30 minutes to call Mom"
+          - "remind me in {time} to {label}"
+
+  HaAlarmsCancelAlarm:
+    data:
+      - sentences:
+          - "(cancel|delete|remove) [my] {label} alarm"
+          - "(cancel|delete|remove) the {label} alarm"
+
+  HaAlarmsCancelReminder:
+    data:
+      - sentences:
+          - "(cancel|delete|remove) [my] {label} reminder"
+          - "(cancel|delete|remove) the {label} reminder"
+
+  HaAlarmsStopAlarm:
+    data:
+      - sentences:
+          - "(stop|cancel|dismiss) [the] alarm"
+
+  HaAlarmsStopReminder:
+    data:
+      - sentences:
+          - "(stop|cancel) [the] reminder"
+
+  HaAlarmsSnoozeAlarm:
+    data:
+      - sentences:
+          - "snooze [the alarm]"
+          - "snooze [the] alarm for {minutes} minutes"
+          - "snooze for {minutes} minutes"
+          - "give me {minutes} more minutes"
+
+  HaAlarmsSnoozeReminder:
+    data:
+      - sentences:
+          - "snooze [the reminder]"
+          - "snooze [the] reminder for {minutes} minutes"
+
+  HaAlarmsListAlarms:
+    data:
+      - sentences:
+          - "what alarms do I have [set]"
+          - "list my alarms"
+          - "what time is my alarm"
+          - "do I have any alarms [set]"
+          - "what alarms are set"
+
+  HaAlarmsListReminders:
+    data:
+      - sentences:
+          - "what reminders do I have [set]"
+          - "list my reminders"
+          - "do I have any reminders [set]"
+
+  HaAlarmsCancelAllAlarms:
+    data:
+      - sentences:
+          - "cancel all [my] alarms"
+          - "turn off all [my] alarms"
+          - "delete all [my] alarms"
+          - "remove all [my] alarms"
+
+  HaAlarmsCancelAllReminders:
+    data:
+      - sentences:
+          - "cancel all [my] reminders"
+          - "delete all [my] reminders"
+
+lists:
+  time:
+    wildcard: true
+  date:
+    wildcard: true
+  label:
+    wildcard: true
+  minutes:
+    wildcard: true
