@@ -83,21 +83,23 @@ HA Alarms integration card in **Settings → Devices & Services**. Volume settin
 
 ---
 
-## Bedroom Satellite
+## Bedroom Voice (ReSpeaker Lite)
 
 | Role | Entity ID | Notes |
 |---|---|---|
-| Assist satellite | `assist_satellite.bedroom_voice_assist_satellite` | Confirmed 2026-04-02 |
-| Media player | TBD — confirm after next alarm test | Run a test alarm; check HA log for `ha_alarms: using media_player` to confirm the entity was found |
+| Assist satellite | `assist_satellite.bedroom_voice_assist_satellite` | Confirmed 2026-04-06 |
+| Media player (raw ESPHome) | `media_player.bedroom_voice_media_player` | **Ring loop uses this** ✅ confirmed 2026-04-06 |
+| Media player (Music Assistant) | `media_player.bedroom_voice` | Skipped — Music Assistant wrapper |
 
-> **If sound doesn't play:** check the HA log for `ha_alarms: no media_player entity found`. This means the satellite's `media_player.*` entity is not linked to the same HA device as the `assist_satellite` entity. Fix in **Settings → Devices & Services** — merge both entities under the same device, or check ESPHome device discovery.
+---
 
-### Remaining bedroom satellites (entity IDs TBD)
+## Elodie Voice (ReSpeaker Lite)
 
-| Room | Device | Assist satellite entity |
+| Role | Entity ID | Notes |
 |---|---|---|
-| Second Bedroom | ReSpeaker Lite (formatBCE) | TBD — confirm after install |
-| Third Bedroom | ReSpeaker Lite (formatBCE) | TBD — confirm after install |
+| Assist satellite | `assist_satellite.elodie_voice_assist_satellite` | Confirmed 2026-04-06 |
+| Media player (raw ESPHome) | `media_player.elodie_voice_media_player` | **Ring loop uses this** ✅ confirmed 2026-04-06 |
+| Media player (Music Assistant) | `media_player.elodie_voice` | Skipped — Music Assistant wrapper |
 
 ---
 

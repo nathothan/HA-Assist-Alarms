@@ -96,16 +96,16 @@ DEVICE_CONFIG: dict[str, dict] = {
     },
     "assist_satellite.bedroom_voice_assist_satellite": {
         "name": "Bedroom",
-        "sound": "/local/alarms/ship_chime.mp3",
-        "volume_start": 0.15,
-        "volume_end": 0.75,
+        "sound": "/local/alarms/bedroom_alarm.mp3",
+        "volume_start": 0.1,
+        "volume_end": 0.6,
         "volume_ramp": True,
     },
-    "assist_satellite.bedroom2_voice_assist_satellite": {
-        "name": "Bedroom 2",
-        "sound": "/local/alarms/ship_chime.mp3",
-        "volume_start": 0.15,
-        "volume_end": 0.75,
+    "assist_satellite.elodie_voice_assist_satellite": {
+        "name": "Elodie",
+        "sound": "/local/alarms/bedroom_alarm.mp3",
+        "volume_start": 0.1,
+        "volume_end": 0.6,
         "volume_ramp": True,
     },
 }
