@@ -41,7 +41,7 @@ The integration automatically discovers the correct media player for each satell
 
 - **Home Assistant 2026.1.0** or newer
 - At least one ESPHome voice satellite with an `assist_satellite.*` entity
-- The **Anthropic Conversation** integration (or another HA-supported LLM) configured as your pipeline's conversation agent — voice commands use intent matching but the satellite pipeline needs a conversation agent for freeform fallback
+- A Conversation agent configured in your pipeline (built-in Home Assistant, Claude, Gemini, or any other HA-supported agent) — needed for freeform speech that doesn't match an alarm or reminder command
 - An alarm sound file placed in `/config/www/alarms/` on your HA instance
 - TTS configured in HA (Nabu Casa Cloud TTS, Piper, or any HA-supported TTS engine)
 
@@ -98,7 +98,7 @@ DEVICE_CONFIG: dict[str, dict] = {
 ```
 
 - `name` — friendly name shown in dashboard cards and spoken satellite attribution
-- `sound` — `/local/alarms/` path to the sound file (must be in `/config/www/alarms/`)
+- `sound` — `/local/alarms/` path or full HTTP URL to the sound file (files must be in `/config/www/alarms/`)
 - `volume_start` / `volume_end` — volume range for the gradual ramp (0.0–1.0)
 - `volume_ramp` — `True` steps +20% every 30 s from start to end; `False` holds at `volume_start`
 
@@ -210,7 +210,7 @@ content: >
 ## Known Limitations
 
 - **Alarm sounds require manual config** — per-device sound files are configured by editing `const.py`. There is no UI for this yet.
-- **Pipeline intent recognition must be enabled** — see Configuration above. LLM-only pipelines bypass custom sentences.
+- **Pipeline needs a Conversation agent** — a pipeline with no Conversation agent set will fail on any speech that doesn't match a sentence. See Pipeline requirement above.
 - **Cancel by label matches substrings** — "cancel my Mom reminder" will match a reminder labelled "call Mom". Intended behaviour, but be aware if you have similarly named items.
 - **Browser Assist UI has no satellite context** — commands issued through the HA Assist UI in the browser have no device_id, so they are not routed to a satellite and some satellite-filtered commands (like "list my alarms") will return results across all satellites.
 - **ReSpeaker LED occasionally gets stuck** — after voice interactions the ReSpeaker LED may stay in slow-pulse white despite the satellite showing idle. Power cycling the device clears it. This is a firmware issue unrelated to HA Alarms.
@@ -237,7 +237,7 @@ For automation use, the integration exposes the following services:
 
 Pull requests are welcome. Before opening one:
 
-1. Run through the voice commands in the Usage section manually against a real satellite
+1. Run through the voice commands in the Voice Commands section manually against a real satellite
 2. Check the HA log for any new `ERROR` or `WARNING` lines from `ha_alarms`
 3. Update `DEVLOG.md` with a brief note on what changed and why
 
