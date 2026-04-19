@@ -106,9 +106,9 @@ The `DEFAULT_ALARM_SOUND` constant is used for any satellite not in `DEVICE_CONF
 
 ### Pipeline requirement
 
-Your HA voice pipeline must have **Intent recognition** set to **Home Assistant**. Without this, voice commands bypass sentence matching and go directly to the LLM conversation agent, which cannot trigger custom intents.
+Your HA voice pipeline's **Conversation agent** must be set to **Home Assistant** (the built-in one) — not Claude, Gemini, or any other LLM. When an LLM is set as the conversation agent it handles all voice input directly, bypassing HA's sentence matching engine entirely, which means custom intents like those used by this integration will never fire.
 
-To check: **Settings → Voice Assistants → Pipelines → (your pipeline) → Edit** — the Intent recognition step must not be set to "None".
+To check: **Settings → Voice Assistants → Pipelines → (your pipeline) → Edit** — the Conversation agent must be set to "Home Assistant", not an LLM integration.
 
 ---
 
