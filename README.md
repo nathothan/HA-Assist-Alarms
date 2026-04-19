@@ -106,9 +106,9 @@ The `DEFAULT_ALARM_SOUND` constant is used for any satellite not in `DEVICE_CONF
 
 ### Pipeline requirement
 
-Your HA voice pipeline's **Conversation agent** must be set to **Home Assistant** (the built-in one) — not Claude, Gemini, or any other LLM. When an LLM is set as the conversation agent it handles all voice input directly, bypassing HA's sentence matching engine entirely, which means custom intents like those used by this integration will never fire.
+Any pipeline with a working Conversation agent will work — including Claude, Gemini, or the built-in Home Assistant agent. HA runs intent and sentence matching *before* the conversation agent, so alarm and reminder commands are intercepted and handled by this integration regardless of what conversation agent is configured. Unrecognised speech falls through to the conversation agent as normal.
 
-To check: **Settings → Voice Assistants → Pipelines → (your pipeline) → Edit** — the Conversation agent must be set to "Home Assistant", not an LLM integration.
+The only hard requirement is that your pipeline has STT and a Conversation agent configured. A pipeline with no Conversation agent set will fail on any voice input that doesn't match a sentence.
 
 ---
 
