@@ -43,7 +43,7 @@ The integration automatically discovers the correct media player for each satell
 - At least one ESPHome voice satellite with an `assist_satellite.*` entity
 - A Conversation agent configured in your pipeline (built-in Home Assistant, Claude, Gemini, or any other HA-supported agent) — needed for freeform speech that doesn't match an alarm or reminder command
 - An alarm sound file placed in `/config/www/alarms/` on your HA instance
-- TTS configured in HA (Nabu Casa Cloud TTS, Piper, or any HA-supported TTS engine)
+- TTS and STT configured in HA — this integration is developed and tested with **Nabu Casa (HA Cloud)** for both STT and TTS. Local Whisper may not reliably transcribe time formats like "7:30" or "in 45 minutes" and is not recommended. If voice commands are inconsistently recognised, switching the pipeline to HA Cloud STT is the first thing to try.
 
 ---
 
@@ -212,6 +212,8 @@ content: >
 - **Alarm sounds require manual config** — per-device sound files are configured by editing `const.py`. There is no UI for this yet.
 - **Pipeline needs a Conversation agent** — a pipeline with no Conversation agent set will fail on any speech that doesn't match a sentence. See Pipeline requirement above.
 - **Cancel by label matches substrings** — "cancel my Mom reminder" will match a reminder labelled "call Mom". Intended behaviour, but be aware if you have similarly named items.
+- **Alarm listing is scoped to the requesting satellite** — "what alarms do I have set?" returns only alarms set from the same device. Asking from a different satellite will return nothing, by design. The Lovelace dashboard card is the best way to see all scheduled alarms across every device at once.
+- **Developer Tools Assist is unreliable for testing alarm listing** — commands run through Developer Tools → Assist run under a different device context and will not return satellite-scoped results correctly. Test listing commands from a real satellite instead.
 - **Browser Assist UI has no satellite context** — commands issued through the HA Assist UI in the browser have no device_id, so they are not routed to a satellite and some satellite-filtered commands (like "list my alarms") will return results across all satellites.
 - **ReSpeaker LED occasionally gets stuck** — after voice interactions the ReSpeaker LED may stay in slow-pulse white despite the satellite showing idle. Power cycling the device clears it. This is a firmware issue unrelated to HA Alarms.
 
