@@ -106,26 +106,123 @@ _NORM_AMPM_DOTS = re.compile(r"\b([ap])\.m\.", re.IGNORECASE)   # a.m./p.m. → 
 _NORM_DOT_SEP   = re.compile(r"^(\d{1,2})\.(\d{2})")            # 8.15 → 8:15
 _NORM_SPACE_SEP = re.compile(r"^(\d{1,2})\s+(\d{2})(?=\s|$)")  # 8 15 → 8:15
 
+# Word → integer for word-based time expressions (hours and minute-tens).
+_WORD_HOUR_MAP: dict[str, int] = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "eleven": 11, "twelve": 12,
+}
+_WORD_MIN_TENS: dict[str, int] = {
+    "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+}
+_WORD_MIN_ONES: dict[str, int] = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+    "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
+    "nineteen": 19,
+}
+
+_WORD_HOUR_PAT = "|".join(sorted(_WORD_HOUR_MAP, key=len, reverse=True))
+_WORD_MIN_TENS_PAT = "|".join(sorted(_WORD_MIN_TENS, key=len, reverse=True))
+_WORD_MIN_ONES_PAT = "|".join(sorted(_WORD_MIN_ONES, key=len, reverse=True))
+
+# Matches "eight thirty PM", "six forty-five am", "seven oh five AM"
+_WORD_TIME_RE = re.compile(
+    rf"^(?P<hour>{_WORD_HOUR_PAT})"
+    rf"\s+"
+    rf"(?P<minutes>oh\s+\d{{1,2}}|oh\s+(?:{_WORD_MIN_ONES_PAT})|"
+    rf"(?:{_WORD_MIN_TENS_PAT})(?:\s+(?:{_WORD_MIN_ONES_PAT})|\s+\d{{1,2}}|-(?:{_WORD_MIN_ONES_PAT})|-\d{{1,2}})?|"
+    rf"\d{{1,2}})"
+    rf"(?:\s*(?P<ampm>am|pm|a\.m\.|p\.m\.?))?$",
+    re.IGNORECASE,
+)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _normalise_word_time(s: str) -> str | None:
+    """Normalise word-based time expressions like "eight thirty PM".
+
+    Returns the normalised string (e.g. "8:30 PM") or None if no match.
+    """
+    m = _WORD_TIME_RE.match(s.strip())
+    if not m:
+        return None
+
+    hour = _WORD_HOUR_MAP[m.group("hour").lower()]
+    minutes_raw = m.group("minutes").strip().lower()
+    ampm_raw = (m.group("ampm") or "").strip().lower()
+
+    # Normalise ampm: "p.m." / "p.m" → "pm", "a.m." / "a.m" → "am"
+    ampm = re.sub(r'\.', '', ampm_raw)  # strip all dots
+
+    # Parse minutes portion
+    if minutes_raw.startswith("oh"):
+        # "oh five" → 5, "oh 5" → 5
+        rest = minutes_raw[2:].strip().lstrip('-')
+        try:
+            minute = int(rest)
+        except ValueError:
+            minute = _WORD_MIN_ONES.get(rest, 0)
+    else:
+        # Try digit-only first
+        try:
+            minute = int(minutes_raw)
+        except ValueError:
+            # Word-based minutes: "thirty", "forty five", "forty-five"
+            # Split on space or hyphen
+            parts = re.split(r'[\s\-]+', minutes_raw)
+            tens_word = parts[0]
+            tens = _WORD_MIN_TENS.get(tens_word, 0)
+            ones = 0
+            if len(parts) > 1:
+                ones_word = parts[1]
+                try:
+                    ones = int(ones_word)
+                except ValueError:
+                    ones = _WORD_MIN_ONES.get(ones_word, 0)
+            minute = tens + ones
+
+    result = f"{hour}:{minute:02d}"
+    if ampm:
+        result += f" {ampm}"
+    return result
+
+
 def _normalise_time_str(s: str) -> str:
     """Normalise faster-whisper STT time variants to standard H:MM am/pm form.
 
     Applied transformations (in order):
-      1. ``a.m.`` / ``p.m.``  →  ``am`` / ``pm``
-         Must run first so the period in "p.m." is not mistaken for a decimal
-         separator in step 2.
-      2. Period-as-separator: ``8.15pm``  →  ``8:15pm``
+      0. Word-based time expressions: "eight thirty PM" → "8:30 PM"
+      1. Spaced AM/PM letters: "7:30 a m" → "7:30 am", "7:30 p m" → "7:30 pm"
+      2. Concatenated 3-digit time: "645 AM" → "6:45 AM"
+      3. ``a.m.`` / ``p.m.``  →  ``am`` / ``pm``
+         Must run before dot-separator step so the period in "p.m." is not
+         mistaken for a decimal separator.
+      4. Period-as-separator: ``8.15pm``  →  ``8:15pm``
          Only applied when a 1–2 digit hour is followed by exactly 2 digit
          minutes, guarding against unrelated decimal values.
-      3. Space-separated digits: ``8 15 pm``  →  ``8:15 pm``
+      5. Space-separated digits: ``8 15 pm``  →  ``8:15 pm``
          Matches H MM at the start of the string, optionally followed by
          a space + am/pm suffix, so "8 15 pm" → "8:15 pm" but plain words
          like "in 30 minutes" are never reached (relative RE fires first).
     """
+    # Step 0: word-based time expressions
+    word_result = _normalise_word_time(s)
+    if word_result is not None:
+        s = word_result
+
+    # Step 1: spaced AM/PM letters: "a m" → "am", "p m" → "pm"
+    s = re.sub(r'\ba\s+m\b', 'am', s, flags=re.IGNORECASE)
+    s = re.sub(r'\bp\s+m\b', 'pm', s, flags=re.IGNORECASE)
+
+    # Step 2: concatenated 3-digit time: "645 AM" → "6:45 AM", "645am" → "6:45am"
+    s = re.sub(r'^([1-9])(\d{2})(\s|(?=[a-zA-Z])|$)', r'\1:\2\3', s)
+
+    # Steps 3-5: existing normalisers
     s = _NORM_AMPM_DOTS.sub(r"\1m", s)   # a.m. / p.m. → am / pm
     s = _NORM_DOT_SEP.sub(r"\1:\2", s)   # 8.15 → 8:15
     s = _NORM_SPACE_SEP.sub(r"\1:\2", s) # 8 15 → 8:15
@@ -225,6 +322,23 @@ def parse_datetime(
     _lower_check = time_text.lower().strip()
     if _lower_check in _WORD_TO_NUM and 1 <= _WORD_TO_NUM[_lower_check] <= 12:
         time_text = str(_WORD_TO_NUM[_lower_check])
+
+    # -----------------------------------------------------------------------
+    # Pre-normalisation ambiguity checks for spoken 12-hour forms.
+    # These forms are inherently 12-hour and ambiguous without AM/PM.
+    # -----------------------------------------------------------------------
+
+    # Concatenated 3-digit: "645" (no AM/PM) — ambiguous spoken hour.
+    _stripped = time_text.strip()
+    if re.match(r'^[1-9]\d{2}$', _stripped):
+        _h = int(_stripped[0])
+        raise ParseAmbiguousError(f"Did you mean {_h} AM or {_h} PM?")
+
+    # Word-based time without AM/PM: "nine thirty" — ambiguous.
+    _wt_check = _WORD_TIME_RE.match(_stripped)
+    if _wt_check and not (_wt_check.group("ampm") or "").strip():
+        _wh = _WORD_HOUR_MAP[_wt_check.group("hour").lower()]
+        raise ParseAmbiguousError(f"Did you mean {_wh} AM or {_wh} PM?")
 
     # -----------------------------------------------------------------------
     # STT normalisation — convert faster-whisper variants to standard form.

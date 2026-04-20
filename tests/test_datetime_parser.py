@@ -217,3 +217,93 @@ class TestStandardFormats:
         import pytest
         with pytest.raises(ParseError):
             parse_datetime("purple monkey", now=_REF)
+
+
+# ===========================================================================
+# TestWhisperLocalVariants — new Whisper STT output variations
+# ===========================================================================
+
+# Use midnight as reference so all times today are in the future.
+_REF_MIDNIGHT = datetime(2026, 4, 20, 0, 0, 0, tzinfo=timezone.utc)
+
+
+def dt2(h: int, mi: int, days_ahead: int = 0) -> datetime:
+    """Build a UTC datetime at h:mi on 2026-04-20 + days_ahead."""
+    return _REF_MIDNIGHT.replace(hour=h, minute=mi, second=0, microsecond=0) + timedelta(
+        days=days_ahead
+    )
+
+
+class TestWhisperLocalVariants:
+    """Whisper STT output variations added in session 3."""
+
+    # --- Concatenated 3-digit times ---
+
+    def test_645_AM_upper(self):
+        assert parse_datetime("645 AM", now=_REF_MIDNIGHT) == dt2(6, 45)
+
+    def test_645_am_lower(self):
+        assert parse_datetime("645 am", now=_REF_MIDNIGHT) == dt2(6, 45)
+
+    def test_645_Am_mixed(self):
+        assert parse_datetime("645 Am", now=_REF_MIDNIGHT) == dt2(6, 45)
+
+    def test_645am_no_space(self):
+        assert parse_datetime("645am", now=_REF_MIDNIGHT) == dt2(6, 45)
+
+    def test_645_bare_ambiguous(self):
+        import pytest
+        with pytest.raises(ParseAmbiguousError):
+            parse_datetime("645", now=_REF_MIDNIGHT)
+
+    # --- Space-separated (regression guards) ---
+
+    def test_6_45_AM_space_sep(self):
+        assert parse_datetime("6 45 AM", now=_REF_MIDNIGHT) == dt2(6, 45)
+
+    def test_6_45_am_space_sep(self):
+        assert parse_datetime("6 45 am", now=_REF_MIDNIGHT) == dt2(6, 45)
+
+    # --- Spaced AM/PM letters ---
+
+    def test_spaced_am_letters(self):
+        # "7:30 a m" → normalises to "7:30 am" → 07:30
+        assert parse_datetime("7:30 a m", now=_REF_MIDNIGHT) == dt2(7, 30)
+
+    def test_spaced_pm_letters(self):
+        # "7:30 p m" → normalises to "7:30 pm" → 19:30
+        assert parse_datetime("7:30 p m", now=_REF_MIDNIGHT) == dt2(19, 30)
+
+    # --- Capitalisation variants (regression guards) ---
+
+    def test_7_30_Am_mixed(self):
+        assert parse_datetime("7:30 Am", now=_REF_MIDNIGHT) == dt2(7, 30)
+
+    def test_7_30_aM_mixed(self):
+        assert parse_datetime("7:30 aM", now=_REF_MIDNIGHT) == dt2(7, 30)
+
+    # --- Word-based time expressions ---
+
+    def test_eight_thirty_PM(self):
+        assert parse_datetime("eight thirty PM", now=_REF_MIDNIGHT) == dt2(20, 30)
+
+    def test_eight_thirty_pm_dotted(self):
+        # "eight thirty p.m" — Whisper sometimes drops trailing dot
+        assert parse_datetime("eight thirty p.m", now=_REF_MIDNIGHT) == dt2(20, 30)
+
+    def test_eight_thirty_am(self):
+        assert parse_datetime("eight thirty am", now=_REF_MIDNIGHT) == dt2(8, 30)
+
+    def test_six_forty_five_am_spaced(self):
+        assert parse_datetime("six forty five am", now=_REF_MIDNIGHT) == dt2(6, 45)
+
+    def test_six_forty_five_am_hyphen(self):
+        assert parse_datetime("six forty-five am", now=_REF_MIDNIGHT) == dt2(6, 45)
+
+    def test_seven_oh_five_AM(self):
+        assert parse_datetime("seven oh five AM", now=_REF_MIDNIGHT) == dt2(7, 5)
+
+    def test_nine_thirty_bare_ambiguous(self):
+        import pytest
+        with pytest.raises(ParseAmbiguousError):
+            parse_datetime("nine thirty", now=_REF_MIDNIGHT)

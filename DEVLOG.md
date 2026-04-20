@@ -10,6 +10,49 @@
 
 ---
 
+## Session 11 — 2026-04-20
+
+### datetime_parser: Whisper STT robustness improvements
+
+**Motivation:** Confirmed real-world failures from a user running a local Whisper API
+(OpenAI-compatible, Jetson Orin Nano) where the same spoken phrase produces
+inconsistent transcription output back-to-back — specifically: colon vs no colon
+between hours and minutes (`6:45` vs `645` vs `6 45`), inconsistent AM/PM
+capitalisation, and word-based time expressions (`"eight thirty PM"`).
+
+**Changes to `datetime_parser.py`:**
+
+Three new normalisers added to `_normalise_time_str()`, applied before the
+existing ones:
+
+1. **Word-time normalisation** (new `_normalise_word_time()` helper) — converts
+   spoken word-time expressions to `HH:MM [AM/PM]` before any other processing:
+   - `"eight thirty PM"` → `"8:30 PM"`
+   - `"six forty-five am"` → `"6:45 am"`
+   - `"seven oh five AM"` → `"7:05 AM"` ("oh" treated as zero)
+   - Word-times without AM/PM (e.g. `"nine thirty"`) raise `ParseAmbiguousError`,
+     consistent with existing bare-hour behaviour.
+
+2. **Spaced AM/PM letters** — `"7:30 a m"` → `"7:30 am"`, `"7:30 p m"` → `"7:30 pm"`
+
+3. **Concatenated 3-digit time** — `"645 AM"` → `"6:45 AM"`, `"645am"` → `"6:45am"`.
+   Bare `"645"` (no AM/PM) raises `ParseAmbiguousError`.
+
+**Changes to `tests/test_datetime_parser.py`:**
+
+Added `TestWhisperLocalVariants` class — 18 new tests covering:
+- Concatenated times: `645 AM`, `645 am`, `645 Am`, `645am`, `645` (ambiguous)
+- Space-separated regression guards: `6 45 AM`, `6 45 am`
+- Spaced AM/PM: `7:30 a m`, `7:30 p m`
+- Capitalisation regression guards: `7:30 Am`, `7:30 aM`
+- Word-based: `eight thirty PM`, `eight thirty p.m`, `eight thirty am`,
+  `six forty five am`, `six forty-five am`, `seven oh five AM`,
+  `nine thirty` (ambiguous)
+
+Full test suite: 58/58 passing, 0 regressions.
+
+---
+
 ## Session 10 — 2026-04-03
 
 ### Added Bedroom 2 satellite
