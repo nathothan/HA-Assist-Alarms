@@ -102,7 +102,10 @@ _DAY_EMBEDDED_RE = re.compile(
 
 # Normalisation patterns for faster-whisper STT variants.
 # Applied in order before the absolute-time regex match.
-_NORM_AMPM_DOTS = re.compile(r"\b([ap])\.m\.", re.IGNORECASE)   # a.m./p.m. → am/pm
+_NORM_AMPM_DOTS = re.compile(                                    # a.m./p.m. → am/pm
+    r"\b([ap])\s*\.\s*m\.{0,2}",
+    re.IGNORECASE,
+)
 _NORM_DOT_SEP   = re.compile(r"^(\d{1,2})\.(\d{2})")            # 8.15 → 8:15
 _NORM_SPACE_SEP = re.compile(r"^(\d{1,2})\s+(\d{2})(?=\s|$)")  # 8 15 → 8:15
 
@@ -134,7 +137,7 @@ _WORD_TIME_RE = re.compile(
     rf"(?P<minutes>oh\s+\d{{1,2}}|oh\s+(?:{_WORD_MIN_ONES_PAT})|"
     rf"(?:{_WORD_MIN_TENS_PAT})(?:\s+(?:{_WORD_MIN_ONES_PAT})|\s+\d{{1,2}}|-(?:{_WORD_MIN_ONES_PAT})|-\d{{1,2}})?|"
     rf"\d{{1,2}})"
-    rf"(?:\s*(?P<ampm>am|pm|a\.m\.|p\.m\.?))?$",
+    rf"(?:\s*(?P<ampm>am|pm|a\.m\.?\.?|p\.m\.?\.?))?$",
     re.IGNORECASE,
 )
 
@@ -226,7 +229,8 @@ def _normalise_time_str(s: str) -> str:
     s = _NORM_AMPM_DOTS.sub(r"\1m", s)   # a.m. / p.m. → am / pm
     s = _NORM_DOT_SEP.sub(r"\1:\2", s)   # 8.15 → 8:15
     s = _NORM_SPACE_SEP.sub(r"\1:\2", s) # 8 15 → 8:15
-    return s.strip()
+    # Strip any trailing punctuation left behind by a.m.. → am. etc.
+    return s.strip().rstrip('.')
 
 
 def _current_now(now: Optional[datetime]) -> datetime:

@@ -307,3 +307,28 @@ class TestWhisperLocalVariants:
         import pytest
         with pytest.raises(ParseAmbiguousError):
             parse_datetime("nine thirty", now=_REF_MIDNIGHT)
+
+
+class TestTrailingPeriodVariants:
+    """Community-reported bug: Whisper outputs 'a.m.' with trailing sentence
+    period, producing '6 a.m..' which previously failed to parse."""
+
+    def test_standard_am_dot(self):
+        # "6 a.m." — standard form, should already work
+        result = parse_datetime("6 a.m.", now=_REF_MIDNIGHT)
+        assert result == dt2(6, 0)
+
+    def test_double_trailing_period(self):
+        # "6 a.m.." — sentence-ending period after a.m. — the reported bug
+        result = parse_datetime("6 a.m..", now=_REF_MIDNIGHT)
+        assert result == dt2(6, 0)
+
+    def test_am_dot_with_date(self):
+        # "set alarm for 6 a.m. tomorrow" — time slot as extracted by sentence engine
+        result = parse_datetime("6 a.m.", date_text="tomorrow", now=_REF_MIDNIGHT)
+        assert result == dt2(6, 0) + timedelta(days=1)
+
+    def test_pm_dot_variant(self):
+        # "wake me at 6 p.m." — PM form, time slot as extracted
+        result = parse_datetime("6 p.m.", now=_REF_MIDNIGHT)
+        assert result == dt2(18, 0)
