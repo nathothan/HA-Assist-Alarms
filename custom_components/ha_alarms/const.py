@@ -102,7 +102,7 @@ DEVICE_CONFIG: dict[str, dict] = {
         "volume_ramp": True,
     },
     "assist_satellite.elodie_voice_assist_satellite": {
-        "name": "Elodie",
+        "name": "Elodie's Room",
         "sound": "http://homeassistant.local:8123/local/alarms/ship_chime.mp3",
         "volume_start": 0.1,
         "volume_end": 0.6,

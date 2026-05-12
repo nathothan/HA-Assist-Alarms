@@ -88,7 +88,7 @@ _RELATIVE_RE = re.compile(
 
 # Matches "7", "7:30", "7 AM", "7:30 AM", "19:30", "7am", etc.
 _TIME_RE = re.compile(
-    r"^(?P<hour>\d{1,2})(?::(?P<minute>\d{2}))?\s*(?P<ampm>am|pm)?$",
+    r"^(?P<hour>\d{1,2})(?::(?P<minute>\d{2}))?\s*(?P<ampm>am|pm)?\s*\.?$",
     re.IGNORECASE,
 )
 

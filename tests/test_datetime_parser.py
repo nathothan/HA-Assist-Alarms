@@ -332,3 +332,8 @@ class TestTrailingPeriodVariants:
         # "wake me at 6 p.m." — PM form, time slot as extracted
         result = parse_datetime("6 p.m.", now=_REF_MIDNIGHT)
         assert result == dt2(18, 0)
+
+    def test_colon_pm_trailing_sentence_period(self):
+        # "Set alarm for 3:00 PM." — sentence-ending period after colon-format time
+        result = parse_datetime("3:00 PM.", now=_REF_MIDNIGHT)
+        assert result == dt2(15, 0)
