@@ -36,6 +36,7 @@ echo ""
 echo "Integration files:"
 
 for f in "$SRC_INTEGRATION"/*; do
+  [ -d "$f" ] && continue          # skip __pycache__ and any other directories
   fname=$(basename "$f")
   cp "$f" "$DST_INTEGRATION/$fname"
   echo "  ✓  custom_components/ha_alarms/$fname"
