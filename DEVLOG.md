@@ -8,6 +8,86 @@
 
 > **Intent recognition must be set to "Home Assistant"** — ha_alarms relies on HA's sentence matching engine to route voice commands to the correct intent handler. In Settings → Voice Assistants → Pipelines → (your pipeline) → Edit, the "Intent recognition" step must be set to "Home Assistant". If it is set to "None", all commands bypass sentence matching and go directly to the LLM conversation agent, which cannot call custom intents — resulting in responses like "I'm afraid setting alarms isn't working." This affects any custom sentence-based integration, not just ha_alarms. Pipelines configured for local Whisper/Piper/Wyoming often default to None for this step.
 
+> **"Prefer handling commands locally" must be ON for any pipeline using ha-alarms** — This toggle is in Settings → Voice Assistants → (your pipeline). When it is OFF, all voice input goes directly to the LLM conversation agent (Claude, Gemini, etc.) without first running through HA's sentence matcher. ha_alarms commands are therefore never matched against the custom sentence YAML and the LLM responds with an error or hallucinated response. When it is ON, HA runs intent matching first; matched commands are handled by ha_alarms, and everything else falls through to the LLM normally. This toggle must be ON regardless of which LLM is configured as the conversation agent.
+
+---
+
+## Session 12 — 2026-05-12
+
+### Alarms not working on Office satellite after router reboot + HA restore
+
+**Symptom:** "Set an alarm for 7 AM" on the Office Jarvis pipeline returned an
+error response from Claude rather than a spoken confirmation and scheduled alarm.
+All other satellites were unaffected. Issue appeared after a router reboot and
+a backup restore to HA 2026.4.4.
+
+### Red herrings investigated
+
+Document these so future sessions don't repeat them:
+
+- **DEVICE_CONFIG missing entry** — checked `const.py`; Office entry was present
+  and correct the entire time.
+- **Entity registry / phantom device_id** — confirmed the Office satellite device
+  existed and was correctly linked to the right entity ID.
+- **Trailing period in STT output** (`"3:30 PM."`) — real bug, fixed in this
+  session (see below), but not the cause of the Office alarm failure.
+- **Anthropic API overloaded error** — an active Anthropic incident during
+  debugging returned 529 errors, which temporarily masked the real issue.
+- **Wrong Claude instance on Office pipeline** — investigated and ruled out;
+  the pipeline configuration was correct.
+
+### Root cause
+
+**"Prefer handling commands locally" was OFF on the Office Jarvis pipeline.**
+
+ha_alarms works via HA custom intent sentences. With "Prefer handling commands
+locally" OFF, every voice command goes straight to Claude — HA's sentence matcher
+never runs, so the custom sentences in `ha_alarms.yaml` are never checked. Claude
+has no knowledge of the ha_alarms intent handler and responded with a hallucinated
+error about the tool interface.
+
+With the toggle ON, HA runs sentence matching first. Alarm and reminder commands
+match the custom sentences and are handled by ha_alarms; anything unmatched falls
+through to Claude normally. The LLM conversation agent is fully compatible — it
+only needs to not intercept the commands before sentence matching runs.
+
+### Fix
+
+Enabled **"Prefer handling commands locally"** on the Office Jarvis pipeline:
+Settings → Voice Assistants → Office Jarvis → toggle ON.
+
+### Action items
+
+- Verify all other Claude pipelines (Kitchen Jarvis, Livingroom Voice) also have
+  "Prefer handling commands locally" ON.
+- Updated the Pipeline Requirements section above to document this toggle.
+
+### Also deployed this session
+
+**`datetime_parser.py` — trailing period in `_TIME_RE`**
+
+`_TIME_RE` did not allow a sentence-ending period after the AM/PM suffix, so
+time strings like `"3:00 PM."` (produced when Whisper appends a sentence period
+to the time token) fell through and failed to parse. Added `\s*\.?$` to absorb
+an optional trailing period.
+
+**`const.py` — Elodie's Room satellite name**
+
+`DEVICE_CONFIG` entry for `assist_satellite.elodie_voice_assist_satellite` had
+`"name": "Elodie"`. Corrected to `"name": "Elodie's Room"` to match the room
+naming convention used for all other satellites.
+
+**`deploy.sh` — skip `__pycache__` in copy loop**
+
+The file copy loop used a bare glob that also matched `__pycache__/`, causing
+`cp` to error out and halt deployment. Added `[ -d "$f" ] && continue` to skip
+any subdirectories silently.
+
+**`tests/test_datetime_parser.py` — new test**
+
+Added `test_colon_pm_trailing_sentence_period` to `TestTrailingPeriodVariants`
+covering `"3:00 PM."`. Full suite: 63/63 passing.
+
 ---
 
 ## Session 11 — 2026-04-20
